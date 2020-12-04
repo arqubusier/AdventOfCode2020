@@ -8,27 +8,49 @@
 #include <vector>
 #include <array>
 #include <set>
+#include <map>
+#include <functional>
+
+using KeySet = std::set<std::string>;
+using KeyValidators = std::map<std::string, std::function<bool(std::string const&)>>;
 
 bool IsBlank(std::string const& str) {
     return str.find_first_not_of(" \n\t");
 }
 
-bool IsValidPassport(std::string const& str) {
-    std::vector<std::string> valids{"byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid", "cid"};
 
-    for (auto valid : valids) {
-        if (0 == valid.compare(0, 3, str)) {
-            return true;
+
+void UpdateKeys(KeyValidators const &validators, std::set<std::string> &remaining, std::string const &line) {
+    std::stringstream ss{line};
+    std::string key_val;
+    while (ss >> key_val) {
+        std::string key{key_val.substr(0, 3)};
+        std::string val{key_val.substr(4)};
+        if (validators.at(key)(val)) {
+            remaining.erase(key);
         }
     }
-    return false;
+    std::cout << line << std::endl;
 }
 
 int main(int argc, char* argv[]) {
     std::uint32_t valid = 0;
     std::string line{};
-    std::set<std::string> all_keys{"byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid"};
-    std::set<std::string> remaining{all_keys};
+    KeySet all_keys{"byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid"};
+    KeyValidators validators{
+        {"byr", [](std::string const& val)-> bool {
+                      int i = std::stoi(val);
+                      return (i >= 1920) && (i <= 2020);}},
+        {"iyr", [](std::string const& val)-> bool {return true;}},
+        {"eyr", [](std::string const& val)-> bool {return true;}},
+        {"hgt", [](std::string const& val)-> bool {return true;}},
+        {"hcl", [](std::string const& val)-> bool {return true;}},
+        {"ecl", [](std::string const& val)-> bool {return true;}},
+        {"pid", [](std::string const& val)-> bool {return true;}},
+        {"cid", [](std::string const&)-> bool {return true;}}
+    };
+
+    KeySet remaining{all_keys};
     while (std::getline(std::cin, line)){
         if (IsBlank(line)) {
             if (remaining.empty()) {
@@ -44,13 +66,7 @@ int main(int argc, char* argv[]) {
             }
             remaining = all_keys;
         } else {
-            std::stringstream ss{line};
-            std::string key_val;
-            while (ss >> key_val) {
-                std::string key{key_val.substr(0, 3)};
-                remaining.erase(key);
-            }
-            std::cout << line << std::endl;
+            UpdateKeys(validators, remaining, line);
         }
     }
 
