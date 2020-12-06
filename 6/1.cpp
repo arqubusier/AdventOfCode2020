@@ -12,7 +12,11 @@
 #include <map>
 #include <functional>
 #include <regex>
+#include <iterator>
 #include "../common.h"
+
+//#define part1
+#define part2
 
 void line_anyone(std::set<char> &unique, int &group, std::string const &line) {
     for (char c : line) {
@@ -23,8 +27,18 @@ void line_anyone(std::set<char> &unique, int &group, std::string const &line) {
     }
 }
 
-int line_all(std::set<char> unique, std::string &line) {
-
+void line_all(std::string &intersection, std::string const &line, bool &reset_intersection) {
+    std::string line_sorted = line;
+    std::sort(line_sorted.begin(), line_sorted.end());
+    if (reset_intersection) {
+        intersection = line_sorted;
+        reset_intersection = false;
+    } else {
+        std::string res{};
+        std::set_intersection(intersection.begin(), intersection.end(), 
+                line_sorted.begin(), line_sorted.end(), std::back_inserter(res));
+        intersection = res;
+    }
 }
 
 int main() {
@@ -32,21 +46,36 @@ int main() {
     int group{0};
     std::set<char> unique;
     std::string line{};
+    std::string intersection{};
+    bool reset_intersection{true};
+
     while (std::getline(std::cin, line)) {
+        std::string line_sorted = line;
+        std::sort(line_sorted.begin(), line_sorted.end());
+        std::cout << line_sorted << std::endl;
+
         if (!IsBlank(line)) {
-#if 1
+#ifdef part1
             line_anyone(unique, group, line);
 #else
-            line_all();
+            line_all(intersection, line, reset_intersection);
 #endif
         }
-        std::cout << line << std::endl;
 
         if (IsBlank(line) || (std::char_traits<char>::eof() == std::cin.peek())) {
-            std::cout << group << std::endl;
+#ifdef part1
+#else
+            group = intersection.size();
+#endif
             sum += group;
+            std::cout << group << " " << sum << std::endl;
             group = 0;
+#ifdef part1
             unique.clear();
+#else
+            intersection.clear();
+            reset_intersection = true;
+#endif
         }
     }
 
