@@ -14,6 +14,15 @@
 #include <regex>
 #include <numeric>
 
+int fibonacci(int n) {
+    if (n == 0)
+        return 1;
+    if (n == 1)
+        return 2;
+
+    return fibonacci(n-1) + fibonacci(n-2);
+}
+
 int main() {
     // include charging port
     std::vector<int> adapters{0};
