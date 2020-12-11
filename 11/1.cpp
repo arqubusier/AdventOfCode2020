@@ -16,41 +16,44 @@
 
 using Grid = std::vector<std::string>;
 
-bool IsFree(Grid const& grid, int col, int row) {
-    if (col >= 0 && col < grid[0].size() && row >= 0 && row < grid.size()) {
-        return grid[row][col] == 'L';
-    }
-    return false;
-}
-
-bool IsOccupied(Grid const& grid, int col, int row) {
+bool IsSeat(Grid const& grid, int col, int row) {
     if (col < 0 || col >= grid[0].size() || row < 0 || row >= grid.size()) {
         return false;
     }
-    return grid[row][col] == '#';
+
+    char val = grid[row][col];
+    return val != '.';
+}
+
+bool Match(Grid const& grid, int col, int row, char target) {
+    if (!IsSeat(grid, col, row)) {
+        return false;
+    }
+    char val = grid[row][col];
+    return  val == target;
 }
 
 bool Rule0Occupy(Grid const& grid, int col, int row) {
-    if (IsOccupied(grid, col-1, row)) {
+    if (Match(grid, col-1, row, '#')) {
         return false;
-    } else if (IsOccupied(grid, col+1, row)) {
+    } else if (Match(grid, col+1, row, '#')) {
         return false;
-    } else if (IsOccupied(grid, col, row+1)) {
+    } else if (Match(grid, col, row-1, '#')) {
         return false;
-    } else if (IsOccupied(grid, col-1, row)) {
+    } else if (Match(grid, col, row+1, '#')) {
         return false;
     }
     return true;
 }
 
 bool Rule1Occupy(Grid const& grid, int col, int row) {
-    if (!IsOccupied(grid, col-1, row)) {
+    if (Match(grid, col-1, row, 'L')) {
         return true;
-    } else if (!IsOccupied(grid, col+1, row)) {
+    } else if (Match(grid, col+1, row, 'L')) {
         return true;
-    } else if (!IsOccupied(grid, col, row+1)) {
+    } else if (Match(grid, col, row-1, 'L')) {
         return true;
-    } else if (!IsOccupied(grid, col-1, row)) {
+    } else if (Match(grid, col, row+1, 'L')) {
         return true;
     }
     return false;
@@ -69,7 +72,7 @@ int NSeats(Grid const& grid) {
     int sum{0};
     for (int row=0; row < grid[0].size(); ++row) {
         for (int col=0; col < grid[0].size(); ++col) {
-            if (IsOccupied(grid, col, row)) {
+            if (Match(grid, col, row, '#')) {
                 sum++;
             }
         }
@@ -80,7 +83,6 @@ int NSeats(Grid const& grid) {
 int main() {
     std::string line{};
     Grid grid;
-    Grid grid_prev;
     while (std::cin >> line) {
        grid.push_back(line);
     }
@@ -99,14 +101,16 @@ int main() {
 
                 if (prev == '.') {
                     continue;
-                } else if (rule(grid, col, row)) {
+                } else if (rule(grid_prev, col, row)) {
                     next = '#';
                 } else {
                     next = 'L';
                 }
                 if (prev != next) {
                     grid[row][col] = next;
-                    change = true;
+                    if (!change) {
+                        change = true;
+                    }
                 }
             }
         }
