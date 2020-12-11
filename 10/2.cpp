@@ -15,14 +15,21 @@
 #include <numeric>
 
 using u64 = std::uint64_t;
-using Adapters = std::vector<u64>;
 
-u64 ValidRemovals(Adapters::iterator begin, Adapters:iterator end) {
+u64 tribonacci(u64 n) {
+    if (n == 0)
+        return 1;
+    if (n == 1)
+        return 1;
+    if (n == 2)
+        return 2;
+
+    return tribonacci(n-1) + tribonacci(n-2) + tribonacci(n-3);
 }
 
 int main() {
     // include charging port
-    Adapters adapters{0};
+    std::vector<u64> adapters{0};
     u64 num{};
     while (std::cin >> num) {
         adapters.push_back(num);
@@ -32,32 +39,21 @@ int main() {
     // include device
     adapters.push_back(*adapters.rbegin() + 3);
 
-    Adapters differences{adapters};
+    std::vector<u64> differences{adapters};
     std::adjacent_difference(adapters.begin(), adapters.end(), differences.begin());
 
-    // Start with the longest valid chain
-    // It's only possible to remove adapters where the difference is one
-    // For each chain of adapters where all the differences are one.
-    // Find the number of combinations of adapters that can be removed.
+    u64 ones_chain = 0;
     u64 total = 1;
-    Adapters::iterator ones_start = Adapters.begin();
-    Adapters::iterator ones_end = Adapters.end();
-    while (true) {
-        ones_end++;
-        if (ones_end == adapters.end()) {
-            u64 combinations = ValidRemovals(ones_start, ones_end);
-            std::cout << combinations << std::endl;
-            total *= combinations;
-            break;
-        }
-
-        if (*ones_end != 1) {
-            if (ones_chain > 0) {
-                u64 combinations = ValidRemovals(ones_start, ones_end);
+    for (u64 diff: differences) {
+        if (diff != 1) {
+            if (ones_chain >= 2) {
+                u64 combinations = tribonacci(ones_chain -2 +1) + 1;
                 std::cout << combinations << std::endl;
                 total *= combinations;
             }
-            ones_start = ones_end + 1;
+            ones_chain = 0;
+        } else {
+            ones_chain += 1;
         }
     }
 

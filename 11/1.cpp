@@ -16,53 +16,61 @@
 
 using Grid = std::vector<std::string>;
 
-bool IsSeat(Grid const& grid, int col, int row) {
-    if (col < 0 || col >= grid[0].size() || row < 0 || row >= grid.size()) {
-        return false;
-    }
-
-    char val = grid[row][col];
-    return val != '.';
+bool InBounds(Grid const& grid, int x, int y) {
+    return !(x < 0 || static_cast<std::size_t>(x) >= grid[0].size()
+            || y < 0 ||  static_cast<std::size_t>(y) >= grid.size());
 }
 
-bool Match(Grid const& grid, int col, int row, char target) {
-    if (!IsSeat(grid, col, row)) {
-        return false;
+char Rule0(Grid const& grid, int x, int y) {
+    if (grid[y][x] != 'L') {
+        return grid[y][x];
     }
-    char val = grid[row][col];
-    return  val == target;
+    for (int dx = -1; dx <= 1; dx++) {
+        for (int dy = -1; dy <= 1; dy++) {
+            if (dy == 0 && dx == 0) {
+                continue;
+            }
+            if (!InBounds(grid, x + dx, y + dy )) {
+                continue;
+            }
+            if (grid[y + dy][x + dx] == '#') {
+                return 'L';
+            }
+        }
+    }
+
+    return '#';
 }
 
-bool Rule0Occupy(Grid const& grid, int col, int row) {
-    if (Match(grid, col-1, row, '#')) {
-        return false;
-    } else if (Match(grid, col+1, row, '#')) {
-        return false;
-    } else if (Match(grid, col, row-1, '#')) {
-        return false;
-    } else if (Match(grid, col, row+1, '#')) {
-        return false;
+char Rule1(Grid const& grid, int x, int y) {
+    if (grid[y][x] != '#') {
+        return grid[y][x];
     }
-    return true;
-}
+    int occupied=0;
+    for (int dx = -1; dx <= 1; dx++) {
+        for (int dy = -1; dy <= 1; dy++) {
+            if (dy == 0 && dx == 0) {
+                continue;
+            }
+            if (!InBounds(grid, x + dx, y + dy )) {
+                continue;
+            }
+            if (grid[y + dy][x + dx] == '#') {
+                ++occupied;
+            }
+            if (occupied == 4) {
+                return 'L';
+            }
+        }
+    }
 
-bool Rule1Occupy(Grid const& grid, int col, int row) {
-    if (Match(grid, col-1, row, 'L')) {
-        return true;
-    } else if (Match(grid, col+1, row, 'L')) {
-        return true;
-    } else if (Match(grid, col, row-1, 'L')) {
-        return true;
-    } else if (Match(grid, col, row+1, 'L')) {
-        return true;
-    }
-    return false;
+    return '#';
 }
 
 void Print(Grid const& grid) {
-    for (int row=0; row < grid[0].size(); ++row) {
-        for (int col=0; col < grid[0].size(); ++col) {
-            std::cout << grid[row][col];
+    for (std::size_t y=0; y < grid.size(); ++y) {
+        for (std::size_t x=0; x < grid[0].size(); ++x) {
+            std::cout << grid[y][x];
         }
         std::cout << std::endl;
     }
@@ -70,9 +78,9 @@ void Print(Grid const& grid) {
 
 int NSeats(Grid const& grid) {
     int sum{0};
-    for (int row=0; row < grid[0].size(); ++row) {
-        for (int col=0; col < grid[0].size(); ++col) {
-            if (Match(grid, col, row, '#')) {
+    for (std::size_t y=0; y < grid.size(); ++y) {
+        for (std::size_t x=0; x < grid[0].size(); ++x) {
+            if (grid[y][x] == '#') {
                 sum++;
             }
         }
@@ -87,27 +95,25 @@ int main() {
        grid.push_back(line);
     }
     
-    std::function<bool(Grid const&, int, int)> rule = Rule0Occupy;
+    std::function<char(Grid const&, int, int)> rule = Rule0;
     bool rule0 = true;
     bool change{false};
     int iter=0;
     do {
         Grid grid_prev = grid;
         change = false;
-        for (int row=0; row < grid[0].size(); ++row) {
-            for (int col=0; col < grid[0].size(); ++col) {
+        for (std::size_t y=0; y < grid.size(); ++y) {
+            for (std::size_t x=0; x < grid[0].size(); ++x) {
                 char next = '#';
-                char prev = grid_prev[row][col];
+                char prev = grid_prev[y][x];
 
                 if (prev == '.') {
                     continue;
-                } else if (rule(grid_prev, col, row)) {
-                    next = '#';
                 } else {
-                    next = 'L';
+                    next = rule(grid_prev, x, y);
                 }
                 if (prev != next) {
-                    grid[row][col] = next;
+                    grid[y][x] = next;
                     if (!change) {
                         change = true;
                     }
@@ -115,15 +121,15 @@ int main() {
             }
         }
         if (rule0) {
-            rule = Rule1Occupy;
+            rule = Rule1;
         } else {
-            rule = Rule0Occupy;
+            rule = Rule0;
         }
         rule0 = !rule0;
 
         iter++;
-        std::cout << iter << std::endl;
-        Print(grid);
+        // std::cout << iter << std::endl;
+        // Print(grid);
     } while(change);
     std::cout << std::endl;
 
