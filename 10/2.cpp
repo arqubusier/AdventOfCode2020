@@ -44,16 +44,30 @@ int main() {
 
     u64 ones_chain = 0;
     u64 total = 1;
+    
+    // Combinations of chains of ones
     for (u64 diff: differences) {
         if (diff != 1) {
             if (ones_chain >= 2) {
-                u64 combinations = tribonacci(ones_chain -2 +1) + 1;
+                u64 combinations = tribonacci(ones_chain);
                 std::cout << combinations << std::endl;
                 total *= combinations;
             }
             ones_chain = 0;
         } else {
             ones_chain += 1;
+        }
+    }
+
+    // Combinations of pairs of (2,1) (1,2)
+    auto i1 = differences.begin();
+    auto i2 = i1 + 1;
+    for (;
+                i2 != differences.end() ; ++i1, ++i2) {
+        if ( (*i1 == 1 && *i2 == 2) || (*i1 == 2 && *i2 == 1) ) {
+            u64 combinations = 2;
+            std::cout << combinations << std::endl;
+            total *= combinations;
         }
     }
 
