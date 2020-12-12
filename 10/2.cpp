@@ -45,7 +45,10 @@ int main() {
     u64 ones_chain = 0;
     u64 total = 1;
     
-    // Combinations of chains of ones
+    // Combinations of chains of ones.
+    // For every chain of adapters where the pair-wise difference is 1.
+    // We can at most remove 2 consecutive adapters.
+    // Thew
     for (u64 diff: differences) {
         if (diff != 1) {
             if (ones_chain >= 2) {
