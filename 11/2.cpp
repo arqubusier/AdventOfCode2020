@@ -21,6 +21,26 @@ bool InBounds(Grid const& grid, int x, int y) {
             || y < 0 ||  static_cast<std::size_t>(y) >= grid.size());
 }
 
+bool Find(Grid const& grid, int x, int y, int dx, int dy, char target) {
+    int xn = x;
+    int yn = y;
+    while (true) {
+        xn += dx;
+        yn += dy;
+        if (!InBounds(grid, xn, yn)) {
+            return false;
+        } 
+        char v = grid[yn][xn];
+        if (v == '.') {
+            continue;
+        } else if ( v == target) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+}
+
 char Rule0(Grid const& grid, int x, int y) {
     if (grid[y][x] != 'L') {
         return grid[y][x];
@@ -30,10 +50,7 @@ char Rule0(Grid const& grid, int x, int y) {
             if (dy == 0 && dx == 0) {
                 continue;
             }
-            if (!InBounds(grid, x + dx, y + dy )) {
-                continue;
-            }
-            if (grid[y + dy][x + dx] == '#') {
+            if (Find(grid, x, y, dx, dy, '#')) {
                 return 'L';
             }
         }
@@ -52,13 +69,10 @@ char Rule1(Grid const& grid, int x, int y) {
             if (dy == 0 && dx == 0) {
                 continue;
             }
-            if (!InBounds(grid, x + dx, y + dy )) {
-                continue;
+            if (Find(grid, x, y, dx, dy, '#')) {
+                occupied++;
             }
-            if (grid[y + dy][x + dx] == '#') {
-                ++occupied;
-            }
-            if (occupied == 4) {
+            if (occupied == 5) {
                 return 'L';
             }
         }
@@ -128,8 +142,8 @@ int main() {
         rule0 = !rule0;
 
         iter++;
-        // std::cout << iter << std::endl;
-        // Print(grid);
+        std::cout << iter << std::endl;
+        Print(grid);
     } while(change);
     std::cout << std::endl;
 
