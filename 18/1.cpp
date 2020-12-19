@@ -1,13 +1,14 @@
 #include "../common.h"
 
 struct LhsExp {
-    int lhs;
+    u64 lhs;
     char op;
+    std::size_t level; //parentheses level
 };
 
 using LhsExpressions = std::vector<LhsExp>;
 
-int calc(LhsExp lhs, int rhs) {
+u64 calc(LhsExp lhs, u64 rhs) {
     switch (lhs.op) {
         case '+':
             return lhs.lhs + rhs;
@@ -20,39 +21,73 @@ int calc(LhsExp lhs, int rhs) {
     }
 }
 
+void DiscardSpace() {
+    for (char c; std::cin.peek() == ' '; std::cin.get(c)) {}
+}
 int main() {
-    LhsExpressions saved{};
-    int acc = 0;
-    while(true) {
-        // Find lhs
-        for (char parens; std::cin.peek() == '('; std::cin >> parens) {}
-        int lhs;
+    u64 sum = 0;
+    while (true) {
+        LhsExpressions saved{};
+        u64 lhs = 0;
+        std::size_t parens_level = 0;
+        
+        
+        // first operand
+        for (char parens; std::cin.peek() == '('; std::cin >> parens) {
+            parens_level++;
+        }
+        
         if (!(std::cin >> lhs)) {
             break;
         }
-        
 
-        std::string opstr;
-        std::cin >> opstr;
+        // successive operads
+        while(true) {
+            char op;
+            char next;
+            DiscardSpace();
+            std::cin.get(op);
+            if ((!std::cin) || (op == '\n')) {
+                std::cout << lhs << std::endl;
+                sum += lhs;
+                break;
+            }
+            std::cin >> next;
+            LhsExp lhs_exp{lhs, op, parens_level};
 
-        // End of expression
-        char next = std::cin.peek();
-        if ( (next == ')') || (next == ' ') ) {
-            auto exp = saved.back();
-            saved.pop_back();
-            acc = calc(exp, lhs);
-            // consume left parentheses
-            for (char parens; std::cin.peek() == ')'; std::cin >> parens) {}
-        // Cannot compute result now
-        } else if (next == '(') {
-            saved.push_back({lhs, opstr[0]});
-        } else {
-            std::cout << "Unexpected input: " << next << std::endl;
-            std::abort();
-            return 1;
+            // Cannot compute result now
+            // Start over with a new rhs value.
+            if ( next == '(') {
+                saved.push_back(lhs_exp);
+                parens_level++;
+                for (char parens; std::cin.peek() == '('; std::cin >> parens) {
+                    parens_level++;
+                }
+
+                std::cin >> lhs;
+            // lhs and rhs are numbers -> compute result now
+            // Finish all expressions that were waiting for closing parentheses.
+            } else {
+                std::cin.putback(next);
+                u64 rhs;
+                std::cin >> rhs;
+                lhs = calc(lhs_exp, rhs);
+
+                // consume parentheses
+                for (char parens; std::cin.peek() == ')'; std::cin >> parens) {
+                    parens_level--;
+                    if (saved.size() > 0) {
+                        auto exp = saved.back();
+                        if (exp.level == parens_level) {
+                            lhs = calc(exp, lhs);
+                            saved.pop_back();
+                        }
+                    }
+                }
+            }
+
         }
     }
-    
-    std::cout << acc << std::endl;
+    std::cout << sum << std::endl;
     return 0;
 }
