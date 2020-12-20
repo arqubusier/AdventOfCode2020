@@ -21,9 +21,6 @@ u64 calc(LhsExp lhs, u64 rhs) {
     }
 }
 
-void DiscardSpace() {
-    for (char c; std::cin.peek() == ' '; std::cin.get(c)) {}
-}
 int main() {
     u64 sum = 0;
     while (true) {
