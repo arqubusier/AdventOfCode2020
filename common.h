@@ -21,3 +21,7 @@ bool IsBlank(std::string const& str) {
 }
 
 using u64 = std::uint64_t;
+
+void DiscardSpace() {
+    for (char c; std::cin.peek() == ' '; std::cin.get(c)) {}
+}
