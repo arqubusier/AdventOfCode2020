@@ -1,3 +1,5 @@
+#include <cmath>
+#include <iomanip>
 #include "../common.h"
 
 std::size_t const kEdgeLength = 10;
@@ -44,13 +46,43 @@ struct Tile {
 
   void RotateCW() {
     Tile org{*this};
-    top = org.left;
+    std::copy(org.left.rbegin(), org.left.rend(), top.begin());
     right = org.top;
-    bot = org.right;
+    std::copy(org.right.rbegin(), org.right.rend(), bot.begin());
     left = org.bot;
   }
 
-  bool operator<(Tile const &rhs) { return this->id < rhs.id; }
+  void Print() const {
+    for (int row = 0; PrintRow(row); row++) {
+      std::cout << std::endl;
+    }
+  }
+
+  bool PrintRow(std::size_t row) const {
+    if (row >= top.size()) return false;
+
+    if (row == 0) {
+      for (char e : top) {
+        std::cout << e;
+      }
+    } else if (row == top.size() - 1) {
+      for (char e : bot) {
+        std::cout << e;
+      }
+    } else {
+      std::cout << left[row];
+      int fill = top.size() - 2;
+      if (row == 1) {
+        std::cout << std::setw(fill) << id;
+      } else {
+        std::cout << std::string(fill, ' ');
+      }
+      std::cout << right[row];
+    }
+    return true;
+  }
+
+  bool operator<(Tile const &rhs) const { return this->id < rhs.id; }
 
   Edge top;
   Edge left;
@@ -62,12 +94,28 @@ struct Tile {
 using Tiles = std::vector<Tile>;
 using Grid = std::vector<Tiles>;
 
-bool FitsTopLeft(Grid &grid, int x, int y) {
-  Tile const &current = grid[y][x];
-  return ((x <= 0) || (current.right == grid[y][x - 1].left)) && ((y <= 0) || (current.bot == grid[y - 1][x].top));
+void PrintGrid(Grid const &grid) {
+  int y_size = grid.size();
+  int x_size = grid[0].size();
+  for (int y = 0; y < y_size; y++) {
+    bool row_done = false;
+    for (int row = 0; !row_done; row++) {
+      for (int x = 0; x < x_size; x++) {
+        row_done = !grid[y][x].PrintRow(row);
+        std::cout << ' ';
+      }
+      std::cout << std::endl;
+    }
+    std::cout << std::endl;
+  }
 }
 
-bool FitsRightBottom(Grid &grid, int x, int y) {
+bool FitsTopLeft(Grid const &grid, int x, int y) {
+  Tile const &current = grid[y][x];
+  return ((x <= 0) || (current.left == grid[y][x - 1].right)) && ((y <= 0) || (current.top == grid[y - 1][x].bot));
+}
+
+bool FitsRightBottom(Grid const &grid, int x, int y) {
   Tile const &current = grid[y][x];
   int y_size = grid.size();
   int x_size = grid[0].size();
@@ -75,7 +123,7 @@ bool FitsRightBottom(Grid &grid, int x, int y) {
          ((y < y_size - 1) || (current.bot == grid[y + 1][x].top));
 }
 
-bool Valid(Grid &grid) {
+bool Valid(Grid const &grid) {
   int y_size = grid.size();
   int x_size = grid[0].size();
   for (int x = 0; x < x_size; x++) {
@@ -88,29 +136,30 @@ bool Valid(Grid &grid) {
   return true;
 }
 
+int count = 0;
 /*
   Only need to flip in one direction
   flipping two directions creates duplicates.
  */
-bool ModifyInPlace(Grid &grid, int x, int y) {
+bool ModifyInPlace(Grid &grid, int n) {
   int y_size = grid.size();
   int x_size = grid[0].size();
+  int x = n % x_size;
+  int y = n / y_size;
   if (y >= y_size) {
     return Valid(grid);
   }
-  int x_prim = (x + 1) % x_size;
-  int y_prim = y + 1;
   Tile &current = grid[y][x];
 
   for (int i = 0; i < 4; i++) {
-    if (ModifyInPlace(grid, x_prim, y_prim)) {
+    if (ModifyInPlace(grid, n + 1)) {
       return true;
     }
     current.RotateCW();
   }
   current.FlipH();
   for (int i = 0; i < 4; i++) {
-    if (ModifyInPlace(grid, x_prim, y_prim)) {
+    if (ModifyInPlace(grid, n + 1)) {
       return true;
     }
     current.RotateCW();
@@ -128,9 +177,23 @@ int main() {
     std::getline(std::cin, blank);
   } while (std::cin);
 
-  // TODO: grid
+  std::size_t side = static_cast<std::size_t>(std::sqrt(tiles.size()));
+  auto start = tiles.begin();
+  auto end = start + side;
+  for (std::size_t row = 0; row < side; row++) {
+    grid.emplace_back(start, end);
+    start = end;
+    end = start + side;
+  }
+
   do {
-    ModifyInPlace(grid, 0, 0);
+    if (ModifyInPlace(grid, 0)) {
+      PrintGrid(grid);
+      std::cout << Valid(grid) << std::endl;
+      break;
+    }
+    PrintGrid(grid);
+    std::cout << "xxxxxxxxxxxxxxxxxxxxxxxx" << std::endl;
   } while (std::next_permutation(grid.begin(), grid.end()));
 
   return 0;
