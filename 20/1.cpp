@@ -1,5 +1,7 @@
 #include <cmath>
+#include <functional>
 #include <iomanip>
+#include <numeric>
 #include <optional>
 #include "../common.h"
 
@@ -31,6 +33,11 @@ struct Tile {
     std::getline(in, line);
     std::copy(line.begin(), line.end(), bot.begin());
     AssignLeftRight(kEdgeLength - 1, line);
+
+    edges[0] = top;
+    edges[1] = bot;
+    edges[2] = left;
+    edges[3] = right;
   }
 
   void FlipV() {
@@ -84,12 +91,13 @@ struct Tile {
   }
 
   bool operator<(Tile const &rhs) const { return this->id < rhs.id; }
+  bool operator==(Tile const &rhs) const { return this->id == rhs.id; }
 
   std::array<Edge, 4> edges;
-  Edge &top = edges[0];
-  Edge &bot = edges[1];
-  Edge &left = edges[2];
-  Edge &right = edges[3];
+  Edge top;
+  Edge bot;
+  Edge left;
+  Edge right;
   int id;
 };
 
@@ -109,13 +117,6 @@ void PrintGrid(Grid const &grid) {
       std::cout << std::endl;
     }
     std::cout << std::endl;
-  }
-}
-
-std::optional<std::pair<int, int>> FitTiles(Tile tile1, Tile tile2) {
-  for (int i1 = 0; i1 < tile1.edges.size(); i1++) {
-    for (int i2 = 0; i2 < tile2.edges.size(); i2++) {
-    }
   }
 }
 
@@ -166,11 +167,32 @@ int main() {
     std::getline(std::cin, blank);
   } while (std::cin);
 
+  std::vector<u64> corners_id{};
   //  std::size_t side = static_cast<std::size_t>(std::sqrt(tiles.size()));
-  for (auto tile : tiles) {
-    AddTile(grid, tile);
-    PrintGrid(grid);
+  for (auto tile1 : tiles) {
+    int matches = 0;
+    for (auto tile2 : tiles) {
+      if (tile1 == tile2) {
+        continue;
+      }
+      tile1.Print();
+      tile2.Print();
+      for (auto edge1 : tile1.edges) {
+        for (auto edge2 : tile2.edges) {
+          bool reverse_match = std::mismatch(edge1.begin(), edge1.end(), edge2.rbegin()).first == edge1.end();
+          if ((edge1 == edge2) || reverse_match) {
+            matches++;
+          }
+        }
+      }
+    }
+    if (matches == 2) {
+      corners_id.push_back(tile1.id);
+    }
   }
+
+  u64 product = std::accumulate(corners_id.begin(), corners_id.end(), u64{1}, std::multiplies<u64>{});
+  std::cout << product << std::endl;
 
   return 0;
 }
