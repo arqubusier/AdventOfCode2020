@@ -162,7 +162,7 @@ Tile FindTopLeftCorner(Tiles &tiles) {
 }
 
 void BuildTopRow(Grid &grid, Tiles &tiles, std::size_t side) {
-  for (std::size_t x = 0; x < side; x++) {
+  for (std::size_t x = 0; x < side - 1; x++) {
     auto edge1 = grid[0][x].edges[1];
     bool next = false;
     for (std::size_t i = 0; i < tiles.size(); i++) {
@@ -187,6 +187,33 @@ void BuildTopRow(Grid &grid, Tiles &tiles, std::size_t side) {
   }
 }
 
+void BuildCol(Grid &grid, Tiles &tiles, std::size_t x) {
+  std::size_t side = grid[0].size();
+  for (std::size_t y = 0; y < side - 1; y++) {
+    auto edge1 = grid[y][x].edges[2];
+    bool next = false;
+    for (std::size_t i = 0; i < tiles.size(); i++) {
+      auto tile = tiles[i];
+      for (int i2 = 0; i2 < 4; i2++) {
+        auto edge2 = tile.edges[i2];
+        bool reverse_match = std::mismatch(edge1.begin(), edge1.end(), edge2.rbegin()).first == edge1.end();
+        if ((edge1 == edge2) || reverse_match) {
+          int rotate = (4 - i2) % 4;
+          tile.RotateCW(rotate);
+          if (reverse_match) {
+            tile.FlipH();
+          }
+          tiles.erase(tiles.begin() + i);
+          grid[y + 1][x] = tile;
+          next = true;
+          break;
+        }
+      }
+      if (next) break;
+    }
+  }
+}
+
 int main() {
   Tiles tiles;
   do {
@@ -195,12 +222,15 @@ int main() {
     std::getline(std::cin, blank);
   } while (std::cin);
 
+  std::size_t side = static_cast<std::size_t>(std::sqrt(tiles.size()));
   Tile top_left = FindTopLeftCorner(tiles);
   top_left.Print();
 
-  std::size_t side = static_cast<std::size_t>(std::sqrt(tiles.size()));
   Grid grid(side, Tiles(side, top_left));
   BuildTopRow(grid, tiles, side);
+  for (std::size_t x = 0; x < side; x++) {
+    BuildCol(grid, tiles, x);
+  }
 
   return 0;
 }
