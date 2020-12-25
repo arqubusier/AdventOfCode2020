@@ -31,6 +31,7 @@ struct Tile {
     for (std::size_t i = 1; i < kEdgeLength - 1; ++i) {
       std::getline(in, line);
       AssignLeftRight(i, line);
+      std::copy(line.begin() + 1, line.end() - 1, data[i - 1].begin());
     }
     std::getline(in, line);
     std::copy(line.begin(), line.end(), bot.begin());
@@ -43,15 +44,21 @@ struct Tile {
   }
 
   void FlipV() {
-    std::swap(top, bot);
-    std::reverse(left.begin(), left.end());
-    std::reverse(right.begin(), right.end());
+    std::swap(edges[0], edges[2]);
+    std::reverse(edges[3].begin(), edges[3].end());
+    std::reverse(edges[1].begin(), edges[1].end());
+    for (int i = 0; i < 4; i++) {
+      std::swap(data[i], data[8 - i]);
+    }
   }
 
   void FlipH() {
-    std::swap(left, right);
-    std::reverse(top.begin(), top.end());
-    std::reverse(bot.begin(), bot.end());
+    std::swap(edges[3], edges[1]);
+    std::reverse(edges[0].begin(), edges[0].end());
+    std::reverse(edges[2].begin(), edges[2].end());
+    for (int i = 0; i < 8; i++) {
+      std::reverse(data[i].begin(), data[i].end());
+    }
   }
 
   void RotateCW() {
@@ -60,6 +67,12 @@ struct Tile {
     edges[1] = org.edges[0];
     std::copy(org.edges[1].rbegin(), org.edges[1].rend(), edges[2].begin());
     edges[3] = org.edges[2];
+
+    for (int y = 0; y < 8; y++) {
+      for (int x = 0; x < 8; x++) {
+        data[x][7 - y] = org.data[y][x];
+      }
+    }
   }
 
   void RotateCW(int n) {
@@ -77,23 +90,21 @@ struct Tile {
   bool PrintRow(std::size_t row) const {
     if (row >= top.size()) return false;
 
+    std::cout << id;
     if (row == 0) {
-      for (char e : top) {
+      for (char e : edges[0]) {
         std::cout << e;
       }
     } else if (row == top.size() - 1) {
-      for (char e : bot) {
+      for (char e : edges[2]) {
         std::cout << e;
       }
     } else {
-      std::cout << left[row];
-      int fill = top.size() - 2;
-      if (row == 1) {
-        std::cout << std::setw(fill) << id;
-      } else {
-        std::cout << std::string(fill, ' ');
+      std::cout << edges[3][row];
+      for (auto c : data[row - 1]) {
+        std::cout << c;
       }
-      std::cout << right[row];
+      std::cout << edges[1][row];
     }
     return true;
   }
@@ -102,6 +113,7 @@ struct Tile {
   bool operator==(Tile const &rhs) const { return this->id == rhs.id; }
 
   std::array<Edge, 4> edges;
+  std::array<std::array<char, 8>, 8> data{};
   Edge top;
   Edge bot;
   Edge left;
@@ -173,6 +185,7 @@ void BuildTopRow(Grid &grid, Tiles &tiles, std::size_t side) {
         if ((edge1 == edge2) || reverse_match) {
           int rotate = 3 - i2;
           tile.RotateCW(rotate);
+          if ((i2 == 0 || i2 == 1)) reverse_match = !reverse_match;
           if (reverse_match) {
             tile.FlipV();
           }
@@ -200,6 +213,7 @@ void BuildCol(Grid &grid, Tiles &tiles, std::size_t x) {
         if ((edge1 == edge2) || reverse_match) {
           int rotate = (4 - i2) % 4;
           tile.RotateCW(rotate);
+          if (i2 == 2 || i2 == 3) reverse_match = !reverse_match;
           if (reverse_match) {
             tile.FlipH();
           }
@@ -212,6 +226,24 @@ void BuildCol(Grid &grid, Tiles &tiles, std::size_t x) {
       if (next) break;
     }
   }
+}
+
+using Image = std::vector<std::string>;
+
+Image Grid2Image(Grid const &grid) {
+  Image image;
+  int y_size = grid.size();
+  for (int y = 0; y < y_size; y++) {
+    for (int row = 0; row < 8; row++) {
+      int x_size = grid[y].size();
+      image.emplace_back(x_size * 8, ' ');
+      for (int x = 0; x < x_size; x++) {
+        auto line = grid[y][x].data[row];
+        std::copy(line.begin(), line.end(), image[y * 8 + row].begin() + x * 8);
+      }
+    }
+  }
+  return image;
 }
 
 int main() {
@@ -230,6 +262,11 @@ int main() {
   BuildTopRow(grid, tiles, side);
   for (std::size_t x = 0; x < side; x++) {
     BuildCol(grid, tiles, x);
+  }
+
+  Image image = Grid2Image(grid);
+  for (auto line : image) {
+    std::cout << line << std::endl;
   }
 
   return 0;
