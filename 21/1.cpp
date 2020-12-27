@@ -1,3 +1,4 @@
+#include <bits/c++config.h>
 #include <algorithm>
 #include <iostream>
 #include <map>
@@ -69,6 +70,7 @@ SList Intersection(SList const &first, SList const &second) {
 }
 
 using Suspects = std::map<std::string, SList>;
+using Confirmeds = std::map<std::string, std::string>;
 Suspects InitialSuspects(Foods const &foods, SList const &allergens, SList const &ingredients) {
   Suspects res{};
   for (auto allergen : allergens) {
@@ -83,13 +85,31 @@ Suspects InitialSuspects(Foods const &foods, SList const &allergens, SList const
   return res;
 }
 
-bool RemoveSuspects(Suspects &suspects, ) {
-  for (auto single : suspects) {
-    if (single.second.size() > 1) {
-      continue;
+void RemoveSuspects(Suspects &suspects, Confirmeds &confirmeds) {
+  for (auto const confirmed : confirmeds) {
+    for (auto allergen_it = suspects.begin(); allergen_it != suspects.end();) {
+      allergen_it->second.erase(confirmed.second);
+      if (allergen_it->second.size() == 1) {
+        confirmeds.insert({allergen_it->first, *allergen_it->second.begin()});
+        allergen_it = suspects.erase(allergen_it);
+      } else {
+        allergen_it++;
+      }
     }
-    for (auto
   }
+}
+
+SList GetAllergenFree(Foods foods, Confirmeds const &confirmeds) {
+  SList res{};
+  for (auto &food : foods) {
+    for (auto confirmed : confirmeds) {
+      food.first.erase(confirmed.second);
+    }
+  }
+  for (auto food : foods) {
+    res.insert(food.first.begin(), food.first.end());
+  }
+  return res;
 }
 
 int main() {
@@ -97,7 +117,30 @@ int main() {
   SList allergens = AllAllergens(foods);
   SList ingredients = AllIngredients(foods);
   Suspects suspects = InitialSuspects(foods, allergens, ingredients);
-  while (RemoveSuspects(suspects)) {
+  Confirmeds confirmeds{};
+  // Filter all allergens with one corresponding ingredient.
+  for (auto it = suspects.begin(); it != suspects.end();) {
+    if (it->second.size() == 1) {
+      confirmeds.insert({it->first, *it->second.begin()});
+      it = suspects.erase(it);
+    } else {
+      it++;
+    }
   }
+  std::size_t old_count = 0;
+  do {
+    old_count = confirmeds.size();
+    RemoveSuspects(suspects, confirmeds);
+  } while (old_count != confirmeds.size());
+
+  SList allergen_free = GetAllergenFree(foods, confirmeds);
+
+  std::size_t count = 0;
+  for (auto food : foods) {
+    for (auto ingredient : allergen_free) {
+      count += food.first.count(ingredient);
+    }
+  }
+  std::cout << count << std::endl;
   return 0;
 }
