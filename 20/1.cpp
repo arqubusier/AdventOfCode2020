@@ -16,6 +16,7 @@ struct Tile {
 
   Tile(Tile const &) = default;
   Tile(Tile &&) = default;
+  Tile &operator=(Tile const &) = default;
 
   Tile(std::istream &in) {
     std::string discard;
@@ -171,22 +172,27 @@ int main() {
   //  std::size_t side = static_cast<std::size_t>(std::sqrt(tiles.size()));
   for (auto tile1 : tiles) {
     int matches = 0;
+    Tiles matched_tiles{};
     for (auto tile2 : tiles) {
       if (tile1 == tile2) {
         continue;
       }
-      tile1.Print();
-      tile2.Print();
       for (auto edge1 : tile1.edges) {
         for (auto edge2 : tile2.edges) {
           bool reverse_match = std::mismatch(edge1.begin(), edge1.end(), edge2.rbegin()).first == edge1.end();
           if ((edge1 == edge2) || reverse_match) {
+            matched_tiles.push_back(tile2);
             matches++;
           }
         }
       }
     }
     if (matches == 2) {
+      tile1.Print();
+      for (auto tile : matched_tiles) {
+        tile.Print();
+      }
+      std::cout << "------------------------" << std::endl;
       corners_id.push_back(tile1.id);
     }
   }

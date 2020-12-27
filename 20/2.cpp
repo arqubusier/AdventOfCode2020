@@ -143,27 +143,26 @@ void PrintGrid(Grid const &grid) {
 Tile FindTopLeftCorner(Tiles &tiles) {
   for (std::size_t i = 0; i < tiles.size(); i++) {
     auto tile1 = tiles[i];
-    bool found = true;
+    std::vector<int> matched_egdes{};
     for (auto tile2 : tiles) {
       if (tile1 == tile2) {
         continue;
       }
-      std::array<int, 2> top_left{0, 3};
-      for (int i1 : top_left) {
+      for (int i1 = 0; i1 < 4; i1++) {
         auto edge1 = tile1.edges[i1];
         for (int i2 = 0; i2 < 4; i2++) {
           auto edge2 = tile2.edges[i2];
           bool reverse_match = std::mismatch(edge1.begin(), edge1.end(), edge2.rbegin()).first == edge1.end();
           if ((edge1 == edge2) || reverse_match) {
-            found = false;
-            break;
+            matched_edges.push_back(i1);
           }
         }
-        if (!found) break;
       }
     }
 
-    if (found) {
+    if (matched_edges.size() == 2) {
+      std::sort(matched_edges.begin(), matched_edges.end());
+      int rotate = matched_edges[0];
       tiles.erase(tiles.begin() + i);
       return tile1;
     }
