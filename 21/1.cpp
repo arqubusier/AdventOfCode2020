@@ -142,5 +142,15 @@ int main() {
     }
   }
   std::cout << count << std::endl;
+
+  std::vector<std::pair<std::string, std::string>> sorted{confirmeds.size()};
+  std::copy(confirmeds.begin(), confirmeds.end(), sorted.begin());
+  std::sort(sorted.begin(), sorted.end(), [](auto lhs, auto rhs) { return lhs.first < rhs.first; });
+  std::cout << sorted[0].second;
+  sorted.erase(sorted.begin());
+  for (auto e : sorted) {
+    std::cout << "," << e.second;
+  }
+  std::cout << std::endl;
   return 0;
 }
